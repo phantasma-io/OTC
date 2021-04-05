@@ -37,6 +37,7 @@ namespace Phantasma.Docs
     class Program
     {
         const string LanguageHeader = "Accept-Language";
+        static SDK.API phantasmaAPI = new SDK.API("localhost:7081");
 
         static string DetectLanguage(HTTPRequest request)
         {
@@ -91,11 +92,27 @@ namespace Phantasma.Docs
                 LocalizationManager.LoadLocalization(language, fileName);
             }*/
 
-
-            for (int i=1; i<10; i++)
+            phantasmaAPI.GetOTC((orders) => {
+                foreach (var offer in orders)
+                {
+                    offers.Add(new Offer(offer.Uid.ToString(), offer.Creator, offer.BaseSymbol, offer.Price.ToString(), offer.QuoteSymbol, offer.Amount.ToString()));
+                }
+            }, (error, errorMessage) =>
             {
-                offers.Add(new Offer(i.ToString(), PhantasmaKeys.Generate().Address, "KCAL", (100*i).ToString(), "SOUL", (20 * i).ToString()));
+                Console.WriteLine(errorMessage);
+            });
+
+            
+
+            /*
+            
+            // TODO Get offers
+            for (int i = 1; i < 10; i++)
+            {
+                offers.Add(new Offer(i.ToString(), PhantasmaKeys.Generate().Address, "KCAL", (100 * i).ToString(), "SOUL", (20 * i).ToString()));
             }
+            }*/
+
 
             Func<HTTPRequest, Dictionary<string, object>> GetContext = (request) =>
             {
@@ -137,6 +154,28 @@ namespace Phantasma.Docs
                 return templateEngine.Render(context, "main");
             });
 
+            server.Post("/login", (request) =>
+            {
+               return HTTPResponse.FromString("{login:true}");
+            });
+
+            server.Post("/logout", (request) =>
+            {
+                return HTTPResponse.FromString("{logout:true}");
+            });
+
+            server.Post("/trade/buy", (request) =>
+            {
+                BuyOTC(request);
+                return HTTPResponse.FromString("{order_created:true}");
+            });
+
+            server.Post("/trade/create", (request) =>
+            {
+                CreateOTC(request);
+                return HTTPResponse.FromString("{logout:true}");
+            });
+
             server.Run();
 
             bool running = true;
@@ -150,6 +189,33 @@ namespace Phantasma.Docs
             {
                 Thread.Sleep(500);
             }
+        }
+
+        private static bool CreateOTC(HTTPRequest request)
+        {
+            bool result = false;
+            Offer offer = new Offer(0.ToString(), Address.FromText(request.args["address"]), request.args["sellSymbol"], request.args["sellAmount"], request.args["buySymbol"], request.args["buyAmmount"]);
+            phantasmaAPI.CreateOTCOrder(Address.FromText(request.args["address"]), Address.FromText(request.args["address"]), offer.sellSymbol, offer.buySymbol, BigInteger.Parse(offer.sellAmount), BigInteger.Parse(offer.buyAmount), 
+                (value) => {
+                    result = true;
+            }, (error, ErrorMessage) => {
+                Console.WriteLine(ErrorMessage);
+                result = false;
+            });
+            return result;
+        }
+
+        private static bool BuyOTC(HTTPRequest request) 
+        {
+            bool result = false;
+            phantasmaAPI.TakeOrder(Address.FromText(request.args["address"]), BigInteger.Parse(request.args["uid"]),
+               (value) => {
+                   result = true;
+               }, (error, ErrorMessage) => {
+                   Console.WriteLine(ErrorMessage);
+                   result = false;
+               });
+            return result;
         }
     }
 }

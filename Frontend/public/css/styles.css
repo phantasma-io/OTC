@@ -10245,3 +10245,13 @@ form .row:first-child .floating-label-form-group {
 	border-radius:20px;
 	padding:20px;
 }
+
+.userDetails {
+  padding: 12px;
+  background-color: #1a252f;
+  color: #fff;
+  border-width:2px;
+	border-radius:20px;
+  border-bottom-left-radius: 0px;
+  border-bottom-right-radius: 0px;
+}
