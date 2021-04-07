@@ -475,6 +475,19 @@ class PhantasmaLink {
             that.onLogin(result.success, "");
         });
     }
+    fetchAccountInfo(callback = function(){}){
+        let that = this;
+        let requestStr = "getAccount";
+        if (this.version > 1) {
+            requestStr = requestStr + "/" + this.platform;
+        }
+        this.sendLinkRequest(requestStr, function (result) {
+            if (result.success) {
+                that.account = result;
+                callback();
+            }
+        });
+    }
     createSocket(providerHint, isResume) {
         console.log("Initialing socket for Phantasma link version " + this.version);
         let path = "ws://" + this.host + "/phantasma";

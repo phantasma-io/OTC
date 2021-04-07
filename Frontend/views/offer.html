@@ -1,0 +1,12 @@
+{{#each offers}}
+<div class="col-md-6 col-lg-4 mb-5">
+    <div id="offer-{{ID}}" data-sellsymbol="{{sellSymbol}}" data-sellamount="{{sellAmount}}" data-buysymbol="{{buySymbol}}" data-buyamount="{{buyAmount}}" class="offer mx-auto">
+        <h4>Selling {{sellAmount}} {{sellSymbol}} for {{buyAmount}} {{buySymbol}}</h4>
+        {{#if seller != userAddr}}
+            <button type="button" class="btn btn-primary btn-block" onclick="takeOffer({{ID}})">Take</button>
+        {{#else}}
+            <button type="button" class="btn btn-primary btn-block" onclick="cancelOffer({{ID}})">Cancel</button>
+        {{/if}}
+    </div>
+</div>
+{{/each}}

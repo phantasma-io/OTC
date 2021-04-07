@@ -10,6 +10,11 @@ using Phantasma.Blockchain.Contracts;
 using Phantasma.Core.Types;
 using Phantasma.Numerics;
 using Phantasma.Cryptography;
+using Phantasma.Domain;
+using Phantasma.VM;
+using Phantasma.Storage;
+using Phantasma.VM.Utils;
+using System.Text.Json;
 
 namespace Phantasma.Docs
 {
@@ -37,7 +42,7 @@ namespace Phantasma.Docs
     class Program
     {
         const string LanguageHeader = "Accept-Language";
-        static SDK.API phantasmaAPI = new SDK.API("localhost:7081");
+        static SDK.API phantasmaAPI;
 
         static string DetectLanguage(HTTPRequest request)
         {
@@ -91,28 +96,16 @@ namespace Phantasma.Docs
                 var language = Path.GetFileNameWithoutExtension(fileName).Split("_")[1];
                 LocalizationManager.LoadLocalization(language, fileName);
             }*/
-
-            phantasmaAPI.GetOTC((orders) => {
-                foreach (var offer in orders)
-                {
-                    offers.Add(new Offer(offer.Uid.ToString(), offer.Creator, offer.BaseSymbol, offer.Price.ToString(), offer.QuoteSymbol, offer.Amount.ToString()));
-                }
-            }, (error, errorMessage) =>
-            {
-                Console.WriteLine(errorMessage);
-            });
-
-            
+            phantasmaAPI = new SDK.API("http://localhost:7081/rpc");
+            GetAllOTC();
 
             /*
-            
             // TODO Get offers
             for (int i = 1; i < 10; i++)
             {
                 offers.Add(new Offer(i.ToString(), PhantasmaKeys.Generate().Address, "KCAL", (100 * i).ToString(), "SOUL", (20 * i).ToString()));
             }
             }*/
-
 
             Func<HTTPRequest, Dictionary<string, object>> GetContext = (request) =>
             {
@@ -133,6 +126,14 @@ namespace Phantasma.Docs
 
                 context["offers"] = offers;
 
+                var userAddr = request.session.GetString("userAddr", "empty");
+
+                if (userAddr == "empty")
+                {
+                    userAddr = request.GetVariable("userAddr");
+                    request.session.SetString("userAddr", langCode);
+                }
+
                 return context;
             };
 
@@ -150,6 +151,7 @@ namespace Phantasma.Docs
 
             server.Get("/", (request) =>
             {
+
                 var context = GetContext(request);
                 return templateEngine.Render(context, "main");
             });
@@ -164,16 +166,36 @@ namespace Phantasma.Docs
                 return HTTPResponse.FromString("{logout:true}");
             });
 
-            server.Post("/trade/buy", (request) =>
+            server.Get("/offers", (request) =>
             {
-                BuyOTC(request);
-                return HTTPResponse.FromString("{order_created:true}");
+                GetAllOTC();
+                var context = GetContext(request);
+                return templateEngine.Render(context, "offer");
             });
 
-            server.Post("/trade/create", (request) =>
+            server.Get("/offers/json", (request) =>
             {
-                CreateOTC(request);
-                return HTTPResponse.FromString("{logout:true}");
+                var js = new JsonSerializerOptions();
+                js.WriteIndented = true;
+                js.IgnoreReadOnlyProperties = false;
+                js.IgnoreNullValues = false;
+                var json = JsonSerializer.Serialize(offers, js);
+
+                string output="[";
+                offers.ForEach((offer) =>
+                {
+                    output += "{";
+                    output += $"id:'{offer.ID}',";
+                    output += $"seller:'{offer.seller}',";
+                    output += $"sellSymbol:'{offer.sellSymbol}',";
+                    output += $"sellAmount:{offer.sellAmount},";
+                    output += $"buySymbol:'{offer.buySymbol}',";
+                    output += $"buyAmount:{offer.buyAmount}";
+                    output += "},";
+                });
+                output.Remove(output.Length - 1);
+                output += "]";
+                return HTTPResponse.FromString(output);
             });
 
             server.Run();
@@ -190,32 +212,34 @@ namespace Phantasma.Docs
                 Thread.Sleep(500);
             }
         }
-
-        private static bool CreateOTC(HTTPRequest request)
+        private static void GetAllOTC()
         {
-            bool result = false;
-            Offer offer = new Offer(0.ToString(), Address.FromText(request.args["address"]), request.args["sellSymbol"], request.args["sellAmount"], request.args["buySymbol"], request.args["buyAmmount"]);
-            phantasmaAPI.CreateOTCOrder(Address.FromText(request.args["address"]), Address.FromText(request.args["address"]), offer.sellSymbol, offer.buySymbol, BigInteger.Parse(offer.sellAmount), BigInteger.Parse(offer.buyAmount), 
-                (value) => {
-                    result = true;
-            }, (error, ErrorMessage) => {
-                Console.WriteLine(ErrorMessage);
-                result = false;
+            offers.Clear();
+            var myScript = new ScriptBuilder().CallContract(NativeContractKind.Exchange.GetContractName(), "GetOTC").EndScript();
+            var scriptStr = Base16.Encode(myScript);
+            phantasmaAPI.InvokeRawScript(DomainSettings.RootChainName, scriptStr, (script) =>
+            {
+                var bytes = Base16.Decode(script.results[0]);
+                var orders = Serialization.Unserialize<VMObject>(bytes).ToArray<ExchangeOrder>();
+                string sellAmount = "";
+                string buyAmount = "";
+                foreach (var offer in orders)
+                {
+                    offers.Add(new Offer(offer.Uid.ToString(), offer.Creator, 
+                        offer.BaseSymbol, UnitConversion.ToDecimal(offer.Price, GetDecimals(offer.BaseSymbol)).ToString(), 
+                        offer.QuoteSymbol, UnitConversion.ToDecimal(offer.Amount, GetDecimals(offer.QuoteSymbol)).ToString()));
+                }
             });
-            return result;
         }
 
-        private static bool BuyOTC(HTTPRequest request) 
+        public static int GetDecimals(string symbol)
         {
-            bool result = false;
-            phantasmaAPI.TakeOrder(Address.FromText(request.args["address"]), BigInteger.Parse(request.args["uid"]),
-               (value) => {
-                   result = true;
-               }, (error, ErrorMessage) => {
-                   Console.WriteLine(ErrorMessage);
-                   result = false;
-               });
-            return result;
+            switch (symbol)
+            {
+                case "SOUL": return 8;
+                case "KCAL": return 10;
+                default: throw new System.Exception("Unknown decimals for " + symbol);
+            }
         }
     }
 }
