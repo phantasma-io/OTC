@@ -234,12 +234,6 @@ function createOfferApi(data){
     let buyAmmount = String(convertToBigInt(buySymbol, data[2].value));
     let address = String(link.account.address);
 
-    console.log("sellSymbol:"+sellSymbol); // out -> sellSymbol:SOUL
-    console.log("buySymbol:"+buySymbol); // out -> buySymbol:KCAL
-    console.log("sellAmount:"+sellAmount); // out -> sellAmount:400000000
-    console.log("buyAmmount:"+buyAmmount); // out -> buyAmmount:34340000000000   
-    console.log("address:"+address); // out -> address:address:P2K6Sm1bUYGsFkxuzHPhia1AbANZaHBJV54RgtQi5q8oK34   
-
     var sb = new ScriptBuilder();
     var myScript = sb.
         allowGas(address).
@@ -255,7 +249,54 @@ function createOfferApi(data){
     });
 }
 
+var buyEnabled = false;
+var sellEnabled = false;
+
 $(document).ready(function(){
+    $("#createOfferButton").prop( "disabled", true );
+
+    $("#sellSymbol").on("change", function(e) {
+        let value = $(this).val();
+        
+        if (value == "KCAL" || value == "SOUL")
+        {
+            sellEnabled = true;
+            if (buyEnabled)
+            {
+                if ( value != $("#buySymbol").val() ){
+                    // Enable Create offer button
+                    $("#createOfferButton").prop( "disabled", false );
+                }else {
+                    $("#createOfferButton").prop( "disabled", true );
+                }
+            }
+        }else {
+            sellEnabled = false;
+            $("#createOfferButton").prop( "disabled", true );
+        }
+    });
+
+    $("#buySymbol").on("change", function(e) {
+        let value = $(this).val();
+        if (value == "KCAL" || value == "SOUL")
+        {
+            buyEnabled = true;
+            
+            if (sellEnabled)
+            {
+                if ( value != $("#sellSymbol").val() ){
+                    // Enable Create offer button
+                    $("#createOfferButton").prop( "disabled", false );
+                }else {
+                    $("#createOfferButton").prop( "disabled", true );
+                }
+            }
+        }else {
+            buyEnabled = false;
+            $("#createOfferButton").prop( "disabled", true );
+        }
+    });
+
     $("#createOfferForm").submit(function(event){
         event.preventDefault();
         let data = $('form').serializeArray();
