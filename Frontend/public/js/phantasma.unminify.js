@@ -642,4 +642,32 @@ class PhantasmaLink {
             $("#fakeLoader").fakeLoader({ release: true });
         }, 1500);
     }
+    getBalance(symbol) {
+        if (!this.account) {
+            return 0;
+        }
+        let balances = this.account.balances;
+        var i;
+        for (i = 0; i < balances.length; i++) {
+            var entry = balances[i];
+            if (entry.symbol == symbol) {
+                return entry.value / Math.pow(10, entry.decimals);
+            }
+        }
+        return 0;
+    }
+    convertToBigInt(symbol, amount) {
+        if (!this.account) {
+            return 0;
+        }
+        let balances = this.account.balances;
+        var i;
+        for (i = 0; i < balances.length; i++) {
+            var entry = balances[i];
+            if (entry.symbol == symbol) {
+                return Math.floor(amount * Math.pow(10, entry.decimals));
+            }
+        }
+        return 0;
+    }
 }
