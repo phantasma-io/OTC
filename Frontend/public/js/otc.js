@@ -1,6 +1,6 @@
 let link = new PhantasmaLink("otc");
 let linkVersion = 1;
-
+let payload = 'exchange';
 // Utils zone
 function loginToPhantasma(providerHint) {
     $("#loginModal").modal("hide");
@@ -22,6 +22,7 @@ function loginToPhantasma(providerHint) {
                         
                         // Handle login success
                         changeUIs();
+            	        updateOffers();
                         loadUserData();
                     },
                     error: function (jqXHR, textStatus, errorThrown) {
@@ -100,6 +101,27 @@ function confirmLogOut()
 	});
 }
 
+function updateOffers(){
+    $.ajax({
+		type: 'GET',
+		url: '/offers', 
+		success: function(result) {
+			console.log('update Offers');
+			$("#offers-content").html(result);
+		}
+	});
+}
+
+function updateUserData(){
+    if(!link.account){
+        return 0;
+    } 
+
+    link.fetchAccountInfo(function(){
+        loadUserData();
+    });
+}
+
 // Offer zone
 /**
  * Take an offer
@@ -111,21 +133,73 @@ function takeOffer(id) {
         return 0;
     }
 
-    bootbox.confirm("Are you sure you want to buy?", function(result){ 
+    let offerInfo = $("#offer-"+id).data();
+    let confirmText = "Are you sure you want to buy?<br>"+
+    "<b>Order id:</b>"+id+"<br>"+
+    "<b>Buying</b> " + offerInfo.sellamount + " " + offerInfo.sellsymbol + "<br>"+
+    "<b>For</b> "+ offerInfo.buyamount + " " + offerInfo.buysymbol;
+
+    bootbox.confirm(confirmText, function(result){ 
 		if (result) {
-            $.ajax({
-                url: "take/buy",
-                type: "post",
-                data: {address: link.account.address, uid:id},
-                success: function (response) {
-                    console.log("added new:"+response);
-                },
-                error: function (jqXHR, textStatus, errorThrown) {
-                    console.log(textStatus, errorThrown);
-                },
-            });
+            takeOfferAPI(id);
 		}
 	});
+}
+
+function takeOfferAPI(id){
+    if (!link.account){
+        return 0;
+    }
+    let address = String(link.account.address);
+
+    var sb = new ScriptBuilder();
+    var myScript = sb.
+        allowGas(address).
+        callContract("exchange", "TakeOrder", [address, 
+        String(id)]).
+        spendGas(address).
+        endScript();
+    link.sendTransaction("main", myScript, payload, (script) =>
+    {
+        updateUserData();
+        updateOffers();
+    });
+}
+
+function cancelOffer(id) {
+    if (!link.account) {
+        return 0;
+    }
+    let offerInfo = $("#offer-"+id).data();
+    let confirmText = "Are you sure you want to cancel?<br>"+
+    "<b>Order id:</b>"+id+"<br>"+
+    "<b>Selling</b> " + offerInfo.sellamount + " " + offerInfo.sellsymbol + "<br>"+
+    "<b>For</b> "+ offerInfo.buyamount + " " + offerInfo.buysymbol;
+    bootbox.confirm(confirmText, function(result){ 
+		if (result) {
+            cancelOfferApi(id);
+		}
+	});
+}
+
+function cancelOfferApi(id){
+    if (!link.account){
+        return 0;
+    }
+    let address = String(link.account.address);
+
+    var sb = new ScriptBuilder();
+    var myScript = sb.
+        allowGas(address).
+        callContract("exchange", "CancelOTCOrder", [address, 
+        String(id)]).
+        spendGas(address).
+        endScript();
+    link.sendTransaction("main", myScript, payload, (script) =>
+    {
+        updateUserData();
+        updateOffers();
+    });
 }
 
 /**
@@ -141,28 +215,91 @@ function openCreateOffer(){
     $("#createOfferModal").modal("show");
 }
 
-function createOffer(){
+function createOffer(formData){
     if (!link.account) {
         return 0;
     }
 
-    // Handle ajax
-    $.ajax({
-        url: "take/create",
-        type: "post",
-        data: {
-            address: link.account.address, 
-            uid:id,
-            sellSymbol: "",
-            sellAmount: "",
-            buySymbol: "",
-            buyAmmount: "",
-        },
-        success: function (response) {
-            console.log("added new:"+response);
-        },
-        error: function (jqXHR, textStatus, errorThrown) {
-            console.log(textStatus, errorThrown);
-        },
+    createOfferApi(formData);
+}
+
+function createOfferApi(data){
+    if (!link.account) {
+        return 0;
+    }
+    
+    let sellSymbol = String(data[1].value);
+    let buySymbol = String(data[3].value);
+    let sellAmount = String(convertToBigInt(sellSymbol, data[0].value));
+    let buyAmmount = String(convertToBigInt(buySymbol, data[2].value));
+    let address = String(link.account.address);
+
+    var sb = new ScriptBuilder();
+    var myScript = sb.
+        allowGas(address).
+        callContract("exchange", "OpenOTCOrder", [address, 
+        sellSymbol, buySymbol, buyAmmount, sellAmount]).
+        spendGas(address).
+        endScript();
+    
+    link.sendTransaction("main", myScript, payload, (script) =>
+    {
+        updateUserData();
+        updateOffers();
     });
 }
+
+var buyEnabled = false;
+var sellEnabled = false;
+
+$(document).ready(function(){
+    $("#createOfferButton").prop( "disabled", true );
+
+    $("#sellSymbol").on("change", function(e) {
+        let value = $(this).val();
+        
+        if (value == "KCAL" || value == "SOUL")
+        {
+            sellEnabled = true;
+            if (buyEnabled)
+            {
+                if ( value != $("#buySymbol").val() ){
+                    // Enable Create offer button
+                    $("#createOfferButton").prop( "disabled", false );
+                }else {
+                    $("#createOfferButton").prop( "disabled", true );
+                }
+            }
+        }else {
+            sellEnabled = false;
+            $("#createOfferButton").prop( "disabled", true );
+        }
+    });
+
+    $("#buySymbol").on("change", function(e) {
+        let value = $(this).val();
+        if (value == "KCAL" || value == "SOUL")
+        {
+            buyEnabled = true;
+            
+            if (sellEnabled)
+            {
+                if ( value != $("#sellSymbol").val() ){
+                    // Enable Create offer button
+                    $("#createOfferButton").prop( "disabled", false );
+                }else {
+                    $("#createOfferButton").prop( "disabled", true );
+                }
+            }
+        }else {
+            buyEnabled = false;
+            $("#createOfferButton").prop( "disabled", true );
+        }
+    });
+
+    $("#createOfferForm").submit(function(event){
+        event.preventDefault();
+        let data = $('form').serializeArray();
+        createOffer(data);
+    });
+});

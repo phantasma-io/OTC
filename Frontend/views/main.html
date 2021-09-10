@@ -58,7 +58,7 @@
                     <div class="divider-custom-line"></div>
                 </div>
                 <!-- Portfolio Grid Items-->
-                <div class="row justify-content-center">
+                <div class="row justify-content-center" id="offers-content">
 
 					{{#if offers}}
                     {{#each offers}}
@@ -190,14 +190,14 @@
                             <div class="col-md"></div>
 
                             <div class="col-md-9">
-                                <form id="createOfferForm">
+                                <form id="createOfferForm" method="POST">
                                     <div class="form-group row">
                                         <label for="inputPassword" class="col-sm-2 col-form-label">Sell</label>
                                         <div class="col-sm-5">
-                                            <input type="number" readonly class="form-control-plaintext" id="staticEmail" value="10">
+                                            <input type="number" class="form-control-plaintext" id="sellAmount" name="sellAmount" value="10">
                                         </div>
                                         <div class="col-sm-5">
-                                            <select class="custom-select mr-sm-2" id="inlineFormCustomSelect">
+                                            <select name="sellSymbol" class="custom-select mr-sm-2" id="sellSymbol">
                                                 <option selected>Choose...</option>
                                                 <option value="SOUL">SOUL</option>
                                                 <option value="KCAL">KCAL</option>
@@ -208,10 +208,10 @@
                                     <div class="form-group row">
                                         <label for="inputPassword" class="col-sm-2 col-form-label">For</label>
                                         <div class="col-sm-5">
-                                            <input type="number" readonly class="form-control-plaintext" id="staticEmail" value="10">
+                                            <input type="number" class="form-control-plaintext" id="buyAmount" name="buyAmount" value="10">
                                         </div>
                                         <div class="col-sm-5">
-                                            <select class="custom-select mr-sm-2" id="inlineFormCustomSelect">
+                                            <select name="buySymbol" class="custom-select mr-sm-2" id="buySymbol">
                                                 <option selected>Choose...</option>
                                                 <option value="SOUL">SOUL</option>
                                                 <option value="KCAL">KCAL</option>
@@ -221,7 +221,7 @@
       
                                     <div class="form-group row">
                                         <div class="col-sm-10">
-                                          <button type="submit" class="btn btn-primary">Create offer</button>
+                                          <button id="createOfferButton" type="submit" class="btn btn-primary">Create offer</button>
                                         </div>
                                     </div>
                                 </form>
