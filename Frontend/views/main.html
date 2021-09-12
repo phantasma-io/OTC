@@ -60,6 +60,7 @@
                 <!-- Portfolio Grid Items-->
                 <div class="row justify-content-center" id="offers-content">
 
+					{{#if offers}}
                     {{#each offers}}
                     <div class="col-md-6 col-lg-4 mb-5">
                         <div class="offer mx-auto">
@@ -68,6 +69,9 @@
                         </div>
                     </div>
 					{{/each}}
+					{{#else}}
+					<p>No offers available.</p>
+					{{/if}}					
 					
                 </div>
             </div>
@@ -103,7 +107,7 @@
                 </div>
                 <!-- About Section Content-->
                 <div class="row">
-                    <p class="lead">Participate in the Phantasma community and trade your tokens with others.</p>
+                    <p class="lead">Participate in the Phantasma community and trade your tokens with others.<br>Don't forget to visit the <a href="https://t.me/PhantasmaCommunityOTC">Phantasma OTC</a> Telegram group</p>
                 </div>
             </div>
         </section>
@@ -124,7 +128,7 @@
 
                     </div>
                     
-                    <div class="col-lg-4 mb-5 mb-lg-0">
+                    <div class="col-lg-4 mb-5 mb-lg-0 mx-auto">
                         <h4 class="text-uppercase mb-4">Around the Web</h4>
                         <a class="btn btn-outline-light btn-social mx-1" href="https://twitter.com/phantasmachain"><i class="fab fa-fw fa-twitter"></i></a>
                         <a class="btn btn-outline-light btn-social mx-1" href="https://www.linkedin.com/company/phantasmachain/about/"><i class="fab fa-fw fa-linkedin-in"></i></a>
