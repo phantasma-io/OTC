@@ -37,6 +37,22 @@ function loginToPhantasma(providerHint) {
     );
 }
 
+function connectToWallet(providerHint){
+    link.login(
+        function (success) {
+            if ( success ){
+                // Handle login success
+                changeUIs();
+                updateOffers();
+                loadUserData();
+            }
+        },
+        linkVersion,
+        "phantasma",
+        providerHint
+    );
+}
+
 function logOut() {
     $.ajax({
         url: "logout",
@@ -111,6 +127,24 @@ function updateOffers(){
 		}
 	});
 }
+
+//function getOffersAPI(){
+//    if(!link.account){
+//        return 0;
+//    } 
+//
+//    var sb = new ScriptBuilder();
+//    var myScript = sb.
+//        callContract("exchange", "GetOTC", []).
+//        endScript();
+//
+//    link.invokeRawScript("main", myScript, payload, (script) =>
+//    {
+//        console.log(script);
+//        console.log(script.result);
+//        console.log(script.result.result);
+//    });
+//}
 
 function updateUserData(){
     if(!link.account){

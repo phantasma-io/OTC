@@ -252,5 +252,10 @@
         <script src="js/phantasma.unminify.js"></script>
         <script src="js/scripts.js"></script>
         <script src="js/otc.js"></script>
+        {{#if logged}}
+        <script>
+            connectToWallet("{{provider}}");
+        </script>
+        {{/if}}
     </body>
 </html>
