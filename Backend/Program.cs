@@ -148,12 +148,32 @@ namespace Phantasma.Docs
                 context["offers"] = offers;
 
                 var userAddr = request.session.GetString("userAddr", "empty");
-
                 if (userAddr == "empty")
                 {
                     userAddr = request.GetVariable("userAddr");
-                    request.session.SetString("userAddr", langCode);
+                    request.session.SetString("userAddr", userAddr);
                 }
+                context["userAddr"] = userAddr;
+
+                var provider = request.session.GetString("provider", "none");
+                if (provider == "none")
+                {
+                    provider = request.GetVariable("provider");
+                    request.session.SetString("provider", provider);
+                }
+                context["provider"] = provider;
+
+                var connector = request.session.GetString("connector", "none");
+                if (connector == "none")
+                {
+                    connector = request.GetVariable("connector");
+                    request.session.SetString("connector", connector);
+                }
+                context["connector"] = connector;
+
+
+                var logged = request.session.GetBool("logged", false);
+                context["logged"] = logged;
 
                 return context;
             };
@@ -172,18 +192,38 @@ namespace Phantasma.Docs
 
             server.Get("/", (request) =>
             {
-
                 var context = GetContext(request);
                 return templateEngine.Render(context, "main");
             });
 
             server.Post("/login", (request) =>
             {
-               return HTTPResponse.FromString("{login:true}");
+                var userAddr = request.GetVariable("address");
+                var provider = request.GetVariable("provider");
+                var connector = request.GetVariable("connector");
+
+                if (userAddr != null && provider != null && connector != null)
+                {
+                    request.session.SetString("userAddr", userAddr);
+                    request.session.SetString("provider", provider);
+                    request.session.SetString("connector", connector);
+                    request.session.SetBool("logged", true);
+                }
+                return HTTPResponse.FromString("{login:true}");
             });
 
             server.Post("/logout", (request) =>
             {
+                var logged = request.session.GetBool("logged", false);
+
+                if (logged)
+                {
+                    request.session.Remove("userAddr");
+                    request.session.Remove("provider");
+                    request.session.Remove("connector");
+                    request.session.Remove("logged");
+                }
+
                 return HTTPResponse.FromString("{logout:true}");
             });
 
@@ -196,6 +236,7 @@ namespace Phantasma.Docs
 
             server.Get("/offers/json", (request) =>
             {
+                GetAllOTC();
                 var js = new JsonSerializerOptions();
                 js.WriteIndented = true;
                 js.IgnoreReadOnlyProperties = false;
