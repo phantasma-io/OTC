@@ -79,7 +79,27 @@ namespace Phantasma.Docs
 
             if (args.Length == 0)
             {
-                args = new string[] { "--path=" + Path.GetFullPath("../Frontend")};
+                args = new string[] { 
+                    "--path=" + Path.GetFullPath("../Frontend"),
+                    "--api=http://localhost:7081/rpc",
+                };
+            }
+
+            string apiHost = null;
+
+            var apiTag = "--api";
+            foreach (var arg in args)
+            {
+                if (arg.StartsWith(apiTag))
+                {
+                    apiHost = arg.Substring(apiTag.Length + 1);
+                }
+            }
+
+            if (string.IsNullOrEmpty(apiHost))
+            {
+                Console.WriteLine("Please insert a valid --api argument, should be URL pointing to a valid Phantasma RPC node");
+                Environment.Exit(-1);
             }
 
             var settings = ServerSettings.Parse(args);
@@ -89,6 +109,7 @@ namespace Phantasma.Docs
             var templateEngine = new TemplateEngine(server, "views");
 
             Console.WriteLine("Frontend path: " + settings.Path);
+            Console.WriteLine("Phantasma RPC: " + apiHost);
 
             /*var locFiles = Directory.GetFiles("Localization", "*.csv");
             foreach (var fileName in locFiles)
@@ -96,7 +117,7 @@ namespace Phantasma.Docs
                 var language = Path.GetFileNameWithoutExtension(fileName).Split("_")[1];
                 LocalizationManager.LoadLocalization(language, fileName);
             }*/
-            phantasmaAPI = new SDK.API("http://localhost:7081/rpc");
+            phantasmaAPI = new SDK.API(apiHost);
             GetAllOTC();
 
             /*
