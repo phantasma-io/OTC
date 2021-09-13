@@ -1,6 +1,7 @@
 let link = new PhantasmaLink("otc");
 let linkVersion = 1;
 let payload = 'exchange';
+let offerInterval;
 // Utils zone
 function loginToPhantasma(providerHint) {
     $("#loginModal").modal("hide");
@@ -45,6 +46,9 @@ function connectToWallet(providerHint){
                 changeUIs();
                 updateOffers();
                 loadUserData();
+            }else {
+                //link.hideModal();
+                logOut();
             }
         },
         linkVersion,
@@ -128,6 +132,8 @@ function updateOffers(){
 	});
 }
 
+
+
 //function getOffersAPI(){
 //    if(!link.account){
 //        return 0;
@@ -173,10 +179,23 @@ function takeOffer(id) {
     "<b>Buying</b> " + offerInfo.sellamount + " " + offerInfo.sellsymbol + "<br>"+
     "<b>For</b> "+ offerInfo.buyamount + " " + offerInfo.buysymbol;
 
-    bootbox.confirm(confirmText, function(result){ 
-		if (result) {
-            takeOfferAPI(id);
-		}
+    bootbox.confirm({
+        message: confirmText,
+        buttons: {
+            confirm: {
+                label: 'Take',
+                className: 'btn-success'
+            },
+            cancel : {
+                label : 'Cancel',
+                className: 'btn-danger'
+            }
+        },
+        callback: function(result){ 
+            if (result) {
+                takeOfferAPI(id);
+            }
+        }
 	});
 }
 
@@ -209,10 +228,23 @@ function cancelOffer(id) {
     "<b>Order id:</b>"+id+"<br>"+
     "<b>Selling</b> " + offerInfo.sellamount + " " + offerInfo.sellsymbol + "<br>"+
     "<b>For</b> "+ offerInfo.buyamount + " " + offerInfo.buysymbol;
-    bootbox.confirm(confirmText, function(result){ 
-		if (result) {
-            cancelOfferApi(id);
-		}
+    bootbox.confirm({
+        message: confirmText,
+        buttons: {
+            confirm: {
+                label: 'Cancel',
+                className: 'btn-success'
+            },
+            cancel : {
+                label : 'Exit',
+                className: 'btn-danger'
+            }
+        },
+        callback: function(result){ 
+            if (result) {
+                cancelOfferApi(id);
+            }
+        }
 	});
 }
 

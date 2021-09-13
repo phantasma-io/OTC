@@ -81,7 +81,7 @@ namespace Phantasma.Docs
             {
                 args = new string[] { 
                     "--path=" + Path.GetFullPath("../Frontend"),
-                    "--api=http://localhost:7081/rpc",
+                    "--api=http://localhost:7077/rpc",
                 };
             }
 
@@ -117,16 +117,9 @@ namespace Phantasma.Docs
                 var language = Path.GetFileNameWithoutExtension(fileName).Split("_")[1];
                 LocalizationManager.LoadLocalization(language, fileName);
             }*/
+
             phantasmaAPI = new SDK.API(apiHost);
             GetAllOTC();
-
-            /*
-            // TODO Get offers
-            for (int i = 1; i < 10; i++)
-            {
-                offers.Add(new Offer(i.ToString(), PhantasmaKeys.Generate().Address, "KCAL", (100 * i).ToString(), "SOUL", (20 * i).ToString()));
-            }
-            }*/
 
             Func<HTTPRequest, Dictionary<string, object>> GetContext = (request) =>
             {
