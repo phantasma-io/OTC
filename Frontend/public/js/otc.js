@@ -2,6 +2,7 @@ let link = new PhantasmaLink("otc");
 let linkVersion = 1;
 let payload = 'exchange';
 let offerInterval;
+let myProvider = ""; 
 // Utils zone
 function loginToPhantasma(providerHint) {
     $("#loginModal").modal("hide");
@@ -25,6 +26,7 @@ function loginToPhantasma(providerHint) {
                         changeUIs();
             	        updateOffers();
                         loadUserData();
+                        myProvider = providerHint;
                     },
                     error: function (jqXHR, textStatus, errorThrown) {
                         console.log(textStatus, errorThrown);
@@ -114,10 +116,24 @@ function changeUIs(){
 
 function confirmLogOut()
 {
-	bootbox.confirm("Do you want to disconnect from ?", function(result){ 
-		if (result) {
-			logOut();
-		}
+	bootbox.confirm({
+        title: "Logout",
+        message: "Do you want to disconnect from "+myProvider+"?",
+        buttons: {
+            confirm: {
+                label: 'Logout',
+                className: 'btn-success'
+            },
+            cancel : {
+                label : 'Cancel',
+                className: 'btn-danger'
+            }
+        },
+        callback: function(result){ 
+            if (result) {
+                logOut();
+            }
+        }
 	});
 }
 
@@ -131,8 +147,6 @@ function updateOffers(){
 		}
 	});
 }
-
-
 
 //function getOffersAPI(){
 //    if(!link.account){
@@ -174,12 +188,13 @@ function takeOffer(id) {
     }
 
     let offerInfo = $("#offer-"+id).data();
-    let confirmText = "Are you sure you want to buy?<br>"+
-    "<b>Order id:</b>"+id+"<br>"+
-    "<b>Buying</b> " + offerInfo.sellamount + " " + offerInfo.sellsymbol + "<br>"+
-    "<b>For</b> "+ offerInfo.buyamount + " " + offerInfo.buysymbol;
+    let confirmText = "Are you sure you wish to take this OTC offer?<br>"+
+    "<b>Order ID:</b> "+id+"<br>"+
+    "<b>Buying:</b> " + offerInfo.sellamount + " " + offerInfo.sellsymbol + "<br>"+
+    "<b>For:</b> "+ offerInfo.buyamount + " " + offerInfo.buysymbol;
 
     bootbox.confirm({
+        title: "Take Order", 
         message: confirmText,
         buttons: {
             confirm: {
@@ -224,11 +239,12 @@ function cancelOffer(id) {
         return 0;
     }
     let offerInfo = $("#offer-"+id).data();
-    let confirmText = "Are you sure you want to cancel?<br>"+
-    "<b>Order id:</b>"+id+"<br>"+
-    "<b>Selling</b> " + offerInfo.sellamount + " " + offerInfo.sellsymbol + "<br>"+
-    "<b>For</b> "+ offerInfo.buyamount + " " + offerInfo.buysymbol;
+    let confirmText = "Are you sure you wish to cancel this OTC offer?<br>"+
+    "<b>Order ID:</b> "+id+"<br>"+
+    "<b>Selling:</b> " + offerInfo.sellamount + " " + offerInfo.sellsymbol + "<br>"+
+    "<b>For:</b> "+ offerInfo.buyamount + " " + offerInfo.buysymbol;
     bootbox.confirm({
+        title: "Cancel OTC offer", 
         message: confirmText,
         buttons: {
             confirm: {
